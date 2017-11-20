@@ -1,88 +1,45 @@
-#include <reg51.h> 
-#include <intrins.h> 
-sbit rs= P2^0; 
-sbit rw = P2^1; 
-sbit ep = P2^2;  
-unsigned char code dis2[] = {"0571-85956028"};
- void delay(unsigned char ms) 
+#include <reg52.h> 
+sbit rs= P3^5; 
+//sbit rw = P3^1; 
+sbit en = P3^4;   
+
+sbit dula=P2^6;  
+sbit wela=P2^7;  
+unsigned char code dis1[] = {"0571-85956028"};
+void delay(unsigned int ms) 
 {  
-	unsigned char i; 
-	while(ms--)  
-	{  
-		for(i = 0; i< 250; i++) 
-		{ 
-			_nop_(); 
-			_nop_(); 
-			_nop_(); 
-			_nop_(); 
-		} 
-	} 
+	 unsigned int x,y;
+	 for(x=ms;x>0;x--)
+	 	for(y=110;y>0;y--);
 }  
-bit lcd_bz() 
+
+void write_com(unsigned char cmd) 
 {  
-	bit result;
-	rs = 0; 
-	rw = 1; 
-	ep = 1; 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	_nop_();  
-	result = (bit)(P0 & 0x80); 
-	ep = 0;  
-	return result; 
-}  
-void lcd_wcmd(unsigned char cmd) 
-{  
-	while(lcd_bz());//ÅÐ¶ÏLCDÊÇ·ñÃ¦Âµ 
-		rs = 0; 
-	rw = 0; 
-	ep = 0; 
-	_nop_(); 
-	_nop_(); 
-	P0 = cmd; 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	ep = 1; 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	ep = 0; 
+	rs=0;
+	P0=cmd;
+	delay(5);
+	en=1;
+	delay(5);
+	en=0;
 }
-void lcd_pos(unsigned char pos) 
+void write_data(unsigned char dat) 
 {  
-	lcd_wcmd(pos | 0x80); 
+	rs=1;
+	P0=dat;
+	delay(5);
+	en=1;
+	delay(5);
+	en=0;
 }  
-void lcd_wdat(unsigned char dat) 
+void init() 
 {  
-	while(lcd_bz());//ÅÐ¶ÏLCDÊÇ·ñÃ¦Âµ 
-	rs = 1; 
-	rw = 0; 
-	ep = 0; 
-	P0 = dat; 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	ep = 1; 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	_nop_(); 
-	ep = 0; 
+	dula=0;
+	wela=0;
+	en=0;
+	write_com(0x38); //16*2
+	write_com(0x0c); //open display
+	write_com(0x06); //write char then address add one
+	write_com(0x01); //clear
 }  
-void lcd_init() 
-{  
-	lcd_wcmd(0x38); 
-	delay(1);  
-	lcd_wcmd(0x0c); 
-	delay(1); 
-	lcd_wcmd(0x06); 
-	delay(1); 
-	lcd_wcmd(0x01); 
-	delay(1); 
-}  
+
 

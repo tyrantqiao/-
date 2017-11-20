@@ -1,87 +1,121 @@
 #ifndef _DS18B20_H_  
 #define _DS18B20_H_  
-  
-#include "reg52.h"
+ 
+#define uchar unsigned char
+#define uint  unsigned int
+int t;
+ 
+sbit DQ=P2^2;   //数据位ds18b20的
 
-#define uchar unsigned char   
-#define uint  unsigned int  
-  
-sbit DQ=P0^5 ;
-void DS18B20_Delayus(uint us);  
-void DS18B20_reset();  
-void DS18B20_write(uchar dat);  
-uchar DS18B20_data();  
-uint read_temperature();  
+int shi;				
+int ge;					
+int shifen;				
+int baifen;		
 
+uint temp; 			 //温度uint
 
-void Delay_DS18B20(int num)
+uchar dat;			 //数据(data)
+uchar a=0;	
+uchar b=0; 
+
+float f_temp;		 //温度float
+float tep=0; 			//读一个温度时的中间温度(temp缩写)
+
+void WriteOneChar(uchar dat);   //写一个字符[数据/命令]
+ 
+void delay_time(uint num)   //delay函数,因为与主函数中的delay不同,所以二者名字不同 
 {
-while(num--) ;
+ 
+while(num--);
+ 
 }
-/*****初始化DS18B20*****/
-void Init_DS18B20(void)
+ 
+void Init_DS18B20(void) //初始化
 {
-unsigned char x;x=0;
-DQ = 1; //DQ复位
-Delay_DS18B20(8); //稍做延时
-DQ = 0; //单片机将DQ拉低
-Delay_DS18B20(80); //精确延时，大于480us
-DQ = 1; //拉高总线
-Delay_DS18B20(14);
-x = DQ; //稍做延时后，如果x=0则初始化成功，x=1则初始化失败
-Delay_DS18B20(20);
+	uint i;   //定义变量,用于延迟
+	DQ=0;     //复位 产生脉冲(下面属于这个过程)
+	i=103;
+	while(i>0)i--;
+	DQ=1;
+	i=4;
+	while(i>0)i--;
 }
-/*****读一个字节*****/
-unsigned char ReadOneChar(void)
+bit tempreadBit(void)  //读一位数据
 {
-unsigned char i=0;
-unsigned char dat = 0;
-for (i=8;i>0;i--)
+	uint i;
+	bit dat;
+	DQ=0;i++;     //i++ 延时
+	DQ=1;i++;i++;
+	dat=DQ;
+	i=8;while(i>0)i--;
+	return(dat);
+	
+}
+uchar ReadOneChar(void)  //读一位字符
 {
-DQ = 0; // 给脉冲信号
-dat>>=1;
-DQ = 1; // 给脉冲信号
-if(DQ)
-dat|=0x80;
-Delay_DS18B20(4);
+uchar i,j;
+uchar dat=0;
+for(i=0;i<8;i++)
+{
+	j=tempreadBit();
+	dat=(j<<7)|(dat>>1);   //数据最低位在最前面
 }
 return(dat);
 }
-/*****写一个字节*****/
-void WriteOneChar(unsigned char dat)
+void tempchange(void)  //获取温度并转换
 {
-unsigned char i=0;
-for (i=8; i>0; i--)
-{
-DQ = 0;
-DQ = dat&0x01;
-Delay_DS18B20(5);
-DQ = 1;
-dat>>=1;
+	Init_DS18B20();      //初始化
+	delay(1);	
+	WriteOneChar(0xcc);		//写跳过读ROM指令
+	WriteOneChar(0x44);		//写温度转换指令
 }
-}
-/*****读取温度*****/
-unsigned int ReadTemperature(void)
-{
-unsigned char a=0;
-unsigned char b=0;
-unsigned int t=0;
-float tt=0;
-Init_DS18B20();
-WriteOneChar(0xCC); //跳过读序号列号的操作
-WriteOneChar(0x44); //启动温度转换
-Init_DS18B20();
-WriteOneChar(0xCC); //跳过读序号列号的操作
-WriteOneChar(0xBE); //读取温度寄存器
-a=ReadOneChar(); //读低8位
-b=ReadOneChar(); //读高8位
-t=b;
-t<<=8;
-t=t|a;
-tt=t*0.0625;
-t= tt*10+0.5; //放大10倍输出并四舍五入
 
-return t;
+uint get_temp()    //获得温度(uint)
+{
+	uchar a,b;
+	Init_DS18B20();
+	delay(1);
+	WriteOneChar(0xcc);   //读ROM指令
+	WriteOneChar(0xbe);		//读暂存器9字节的温度数据
+	a=ReadOneChar();			//低8位
+	b=ReadOneChar();			//高8位
+	temp=b;								
+	temp<<=8;							//拼在一起
+	temp=temp|a;					//拼在一起
+	f_temp=temp*0.0625;		
+	temp=f_temp*10+0.5;		//+0.5四舍五入    *10是只取小数点后面一位,要看我们要不要用到百分位
+	f_temp=f_temp+0.05;
+	return temp;
+	
 }
+
+ 
+void WriteOneChar(uchar dat)  //写一个字符[命令/数据]
+{
+	uint i;
+	uchar j;
+	bit testb;
+	for(j=1;j<=8;j++)
+	{
+		testb=dat&0x01;
+		dat=dat>>1;
+		if(testb)
+		{
+			DQ=0;
+			i++;i++;
+			DQ=1;
+			i=8;while(i>0)i--;
+		}
+		else
+		{
+			DQ=0;
+			i=8;while(i>0)i--;
+			DQ=1;
+			i++;i++;
+		}
+	}
+}
+
+
   
 #endif  
