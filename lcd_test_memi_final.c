@@ -163,14 +163,6 @@ void DisposeKey(void) //处理按键事件
 		case 0x60:			  		//P3^4
 			blue=1;red=0;				//这个是指示灯的,到时用来看看有没有实现成功
 			Step = Step+30;			//这个是步进
-			write_com(0x80+0x40);
-			write_data('F');
-			delay(5);
-			for(num=0;num<2;num++)
-			{
-				write_data(temp_str[num]);
-				delay(5);
-			}
 			nDelayKey = 2000;		//延时(软件延时)	
 			break;
 		case 0x50:						//P3^5
@@ -178,14 +170,14 @@ void DisposeKey(void) //处理按键事件
 			setTemp = setTemp+Step;  //SetTemp设置的温度++
 			nDelayKey = 2000;		
 			displayTemp();
-			//delay(10);
+			delay(10);
 			break;
 		case 0x30:						//P3^6
 			blue=0;red=0;
 			setTemp = setTemp-Step;  //SetTemp设置温度--
 			nDelayKey = 2000;
 			displayTemp();
-			//delay(10);
+			delay(10);
 			break;
 		default:
 			break;
